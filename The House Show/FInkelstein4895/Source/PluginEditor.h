@@ -16,7 +16,7 @@
 //==============================================================================
 /**
 */
-class TheHouseShowAudioProcessorEditor  : public AudioProcessorEditor, public Slider::Listener
+class TheHouseShowAudioProcessorEditor  : public AudioProcessorEditor, public Slider::Listener, ComboBox::Listener
 
 {
 public:
@@ -28,7 +28,7 @@ public:
     void resized() override;
 
     void sliderValueChanged(Slider* slider) override;
-    
+    void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
     
 private:
     // This reference is provided as a quick way for your editor to
@@ -43,6 +43,9 @@ private:
     Label EFXgainLabel;
     Slider toneKnob;
     Label toneLabel;
+    ComboBox sat;
+    Label satLabel;
+    Slider thresh;
    
     std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment>
     sliderAttachment;

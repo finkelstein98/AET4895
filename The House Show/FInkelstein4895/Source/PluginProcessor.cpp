@@ -10,7 +10,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
 //==============================================================================
 TheHouseShowAudioProcessor::TheHouseShowAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -32,14 +31,16 @@ TheHouseShowAudioProcessor::~TheHouseShowAudioProcessor()
 
 AudioProcessorValueTreeState::ParameterLayout
 TheHouseShowAudioProcessor::createParameterLayout(){
+  
+    //parameters!
     
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
-    params.push_back(std::make_unique<AudioParameterFloat>("LOW SHELF", "Low Shelf", 30.0f, 500.0f, 150.0f));
-   
-    params.push_back(std::make_unique<AudioParameterFloat>("HIGH SHELF", "High Shelf", 6000.0f, 15000.0f, 8000.0f));
+    params.push_back(std::make_unique<AudioParameterFloat>("HIGH PASS", "High Pass", 30.0f, 500.0f, 150.0f));
+    params.push_back(std::make_unique<AudioParameterFloat>("LOW PASS", "Low Pass", 6000.0f, 15000.0f, 8000.0f));
     params.push_back(std::make_unique<AudioParameterFloat>("TONE", "Tone Knob", 750.0f, 10000.0f, 2000.0f));
-    params.push_back(std::make_unique<AudioParameterFloat>("GAIN", "Makeup Gain", 0.0f, 2.0f, 1.5f));
+    params.push_back(std::make_unique<AudioParameterFloat>("GAIN", "Makeup Gain", 1.0f, 2.0f, 1.0f));
+    params.push_back(std::make_unique<AudioParameterFloat>("THRESH", "Threshold", 0.1f, 1.0f, 0.55f));
     
     return{params.begin(), params.end()};
 }
@@ -110,6 +111,7 @@ void TheHouseShowAudioProcessor::changeProgramName (int index, const String& new
 void TheHouseShowAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     biquad.setFs(sampleRate);
+   
 }
 
 void TheHouseShowAudioProcessor::releaseResources()
@@ -152,36 +154,39 @@ void TheHouseShowAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-   freqVal = *state.getRawParameterValue("LOW SHELF");
-    freqVal2 = *state.getRawParameterValue("HIGH SHELF");
+  // float freqVal = *state.getRawParameterValue("HIGH PASS");
+  // float freqVal2 = *state.getRawParameterValue("LOW PASS");
     
     // high-pass filter
     biquad.setFreq(freqVal);
     biquad.setQ(QVal);
-    biquad.setAmpdB(ampVal);
+    biquad.setAmpdB(0.0f);
     biquad.setFilterType(filterType);
     
     //low-pass filter
     biquad2.setFreq(freqVal2);
     biquad2.setQ(QVal);
-    biquad2.setAmpdB(ampVal);
+    biquad2.setAmpdB(0.0f);
     biquad2.setFilterType(filterType2);
     
+    //constant freq response
     miclow.setFreq(500.0f);
     miclow.setQ(1.0f);
     miclow.setAmpdB(-0.8f);
     miclow.setFilterType(filterType3);
-    
     michigh.setFreq(3800.0f);
     michigh.setQ(3.0f);
     michigh.setAmpdB(1.5f);
     michigh.setFilterType(filterType4);
 
+    //tone knob
     tone.setFreq(freqVal3);
     tone.setQ(QVal2);
-    tone.setAmpdB(8.0f);
+    tone.setAmpdB(12.0f);
     tone.setFilterType(filterType4);
-
+   
+    
+    
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
@@ -192,15 +197,44 @@ void TheHouseShowAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
        
         float x = buffer.getReadPointer(channel)[n];
 
-            x = (2.0f/M_PI) * atan(2.0f * x);
+if (choose == 1)
+{
+if (x > threshold)
+{
+x = 1.0f-expf(-x);
+}
+else
+{
+x = -1.0f + expf(x);
+}
+}
+if (choose == 2)
+{
+if (x > threshold)
+{
+x = threshold;
+}
+else if (x < -threshold)
+{
+x = -threshold;
+}
+else
+{
+x = x;
+}
+}
             
             float y = biquad.processSample(x, channel); //high-pass
             float z = biquad2.processSample(x, channel); //low-pass
-            float a = miclow.processSample(x, channel); //frequency response low-mids
-            float b = michigh.processSample(x, channel); //frequency response high-mids
-            float c = tone.processSample(x, channel); //tone sweep knob
-            float fx =  y + z + a + b + c ;
-            buffer.getWritePointer(channel)[n] = fx + makeupGain;
+            
+          float bpf = y + z;
+            
+            float a = miclow.processSample(bpf, channel); //frequency response low-mids
+            float b = michigh.processSample(bpf, channel); //frequency response high-mids
+            float c = tone.processSample(bpf, channel); //tone sweep knob
+            float fx =  a + b + c;
+            gainSmooth = (1.f-alpha)*makeupGain + alpha*gainSmooth;
+            buffer.getWritePointer(channel)[n] = fx + gainSmooth;
          
         }
     }
@@ -222,15 +256,13 @@ AudioProcessorEditor* TheHouseShowAudioProcessor::createEditor()
 //==============================================================================
 void TheHouseShowAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+  
 }
 
 void TheHouseShowAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+     
+    
 }
 
 //==============================================================================
