@@ -57,18 +57,25 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     
-    float freqVal = 30.0f;
+  //  freqVal = *state.getRawParameterValue("HIGH PASS");
+  //  freqVal2 = *state.getRawParameterValue("LOW PASS");
+    
+    float freqVal = 150.0f;
     float freqVal2 = 10000.0f;
     float freqVal3 = 2500.0f;
-    float QVal = 2.0f;
-    float QVal2 = 0.7;
-    float ampVal = - 18.0f;
+    float QVal = 1.8f;
+    float QVal2 = sqrt(2/2);
+    float ampVal = 12.0f;
     float makeupGain = 0.0f;
+    float threshold = 0.55f;
+    
 
-    Biquad::FilterType filterType = Biquad::FilterType::LSHELF;
-    Biquad::FilterType filterType2 = Biquad::FilterType::HSHELF;
+    Biquad::FilterType filterType = Biquad::FilterType::HPF;
+    Biquad::FilterType filterType2 = Biquad::FilterType::LPF;
     Biquad::FilterType filterType3 = Biquad::FilterType::NOTCH;
     Biquad::FilterType filterType4 = Biquad::FilterType::PEAK;
+    
+    int choose;
     
     AudioProcessorValueTreeState state;
     AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -81,7 +88,9 @@ private:
     Biquad miclow;
     Biquad michigh;
     Biquad tone;
-    
+    float gainSmooth = 0.0f;
+    float alpha = 0.995f;
+   
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TheHouseShowAudioProcessor)
