@@ -57,14 +57,11 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     
-  //  freqVal = *state.getRawParameterValue("HIGH PASS");
-  //  freqVal2 = *state.getRawParameterValue("LOW PASS");
-    
     float freqVal = 150.0f;
     float freqVal2 = 10000.0f;
     float freqVal3 = 2500.0f;
-    float QVal = 1.8f;
-    float QVal2 = sqrt(2/2);
+    float QVal = sqrt(2/2);
+    float QVal2 = 1.8f;
     float ampVal = 12.0f;
     float makeupGain = 0.0f;
     float threshold = 0.55f;

@@ -154,8 +154,6 @@ void TheHouseShowAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-  // float freqVal = *state.getRawParameterValue("HIGH PASS");
-  // float freqVal2 = *state.getRawParameterValue("LOW PASS");
     
     // high-pass filter
     biquad.setFreq(freqVal);
@@ -198,31 +196,20 @@ void TheHouseShowAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiB
         float x = buffer.getReadPointer(channel)[n];
 
 if (choose == 1)
-{
-if (x > threshold)
-{
-x = 1.0f-expf(-x);
-}
-else
-{
-x = -1.0f + expf(x);
-}
-}
+{ if (x > threshold)
+{ x = 1.0f-expf(-x); }
+
+else{ x = -1.0f + expf(x); }}
+
 if (choose == 2)
-{
-if (x > threshold)
-{
-x = threshold;
-}
+{ if (x > threshold)
+{x = threshold;}
+
 else if (x < -threshold)
-{
-x = -threshold;
-}
+{x = -threshold;}
+
 else
-{
-x = x;
-}
-}
+{x = x;}}
             
             float y = biquad.processSample(x, channel); //high-pass
             float z = biquad2.processSample(x, channel); //low-pass
