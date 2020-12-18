@@ -3,6 +3,6 @@
 Version 1.0 
 
 NEED TO CHANGE: 
-Issues with setting recall, xml
-Better UI
+Issues with setting recall, xml /
+Better UI /
 Experiment with different distortion algorithms
